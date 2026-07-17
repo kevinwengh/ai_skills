@@ -1,0 +1,4 @@
+interface:
+  display_name: "OKF Builder"
+  short_description: "Produce deep source-linked repository knowledge"
+  default_prompt: "Use $okf-builder to produce and maintain deep OKF repository knowledge."
