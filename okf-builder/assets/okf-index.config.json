@@ -3,10 +3,12 @@
   "source_include": ["**/*"],
   "exclude": [
     "AGENTS.md",
+    "CLAUDE.md",
     ".okf-index.json",
     ".git/**",
     ".okf/**",
     ".agents/**",
+    ".claude/**",
     "tools/okf_index.py",
     "**/node_modules/**",
     "**/.venv/**",

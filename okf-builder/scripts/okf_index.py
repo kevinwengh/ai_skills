@@ -18,6 +18,7 @@ from urllib.parse import unquote
 DEFAULT_CONFIG_NAME = ".okf-index.json"
 LOCAL_SCRIPT = Path("tools/okf_index.py")
 REPO_SKILL = Path(".agents/skills/okf-builder")
+CLAUDE_REPO_SKILL = Path(".claude/skills/okf-builder")
 RESERVED = {"index.md", "log.md"}
 MARKDOWN_LINK = re.compile(r"\[[^\]]*]\(\s*(?:<([^>]+)>|([^\s)]+))(?:\s+[^)]*)?\s*\)")
 GUIDANCE_START = "<!-- okf-builder:start -->"
@@ -29,7 +30,7 @@ def default_config() -> dict[str, Any]:
         "version": 1,
         "source_include": ["**/*"],
         "exclude": [
-            "AGENTS.md", ".okf-index.json", ".git/**", ".okf/**", ".agents/**", "tools/okf_index.py",
+            "AGENTS.md", "CLAUDE.md", ".okf-index.json", ".git/**", ".okf/**", ".agents/**", ".claude/**", "tools/okf_index.py",
             "**/node_modules/**", "**/.venv/**", "**/vendor/**", "**/target/**", "**/build/**", "**/dist/**", "**/coverage/**",
             "**/.idea/**", "**/.vscode/**", "**/.obsidian/**", "**/.ipynb_checkpoints/**", "**/*.log",
             "**/.env", "**/.env.*", "**/.netrc", "**/.npmrc", "**/.aws/**", "**/.gnupg/**", "**/.kube/**", "**/.ssh/**", "**/sshkey/**", "**/id_*",
@@ -50,14 +51,15 @@ def skill_directory(root: Path) -> Path:
     bundled = Path(__file__).resolve().parents[1]
     if (bundled / "SKILL.md").is_file():
         return bundled
-    installed = root / REPO_SKILL
-    if (installed / "SKILL.md").is_file():
-        return installed
+    for relative_path in (REPO_SKILL, CLAUDE_REPO_SKILL):
+        installed = root / relative_path
+        if (installed / "SKILL.md").is_file():
+            return installed
     raise ValueError("unable to locate the okf-builder skill bundle")
 
 
-def install_repo_skill(root: Path) -> bool:
-    target = root / REPO_SKILL
+def install_repo_skill(root: Path, relative_path: Path) -> bool:
+    target = root / relative_path
     if target.exists():
         if not target.is_dir() or not (target / "SKILL.md").is_file():
             raise ValueError(f"refusing to overwrite non-skill directory: {target}")
@@ -153,7 +155,7 @@ def source_paths(root: Path, config: dict[str, Any]) -> list[Path]:
     patterns = string_list(config["source_include"])
     exclusions = string_list(config["exclude"])
     output = Path(config["output_directory"])
-    generated_directories = (output, REPO_SKILL)
+    generated_directories = (output, REPO_SKILL, CLAUDE_REPO_SKILL)
     paths: list[Path] = []
     for directory, child_directories, files in os.walk(root):
         directory_path = Path(directory)
@@ -269,12 +271,12 @@ def validate(root: Path, requested: Path) -> list[str]:
     return errors
 
 
-def guidance(config_name: str, output_directory: str) -> str:
+def guidance(skill_path: Path, config_name: str, output_directory: str) -> str:
     return "\n".join([
         GUIDANCE_START,
         "## Repository Knowledge",
         "",
-        "Use the repo-local `okf-builder` skill in `.agents/skills/okf-builder/` to produce and maintain semantic knowledge.",
+        f"Use the repo-local `okf-builder` skill in `{skill_path.as_posix()}/` to produce and maintain semantic knowledge.",
         "",
         f"Treat `{output_directory}/` as repository context. Before answering a question that may rely on repository knowledge, automatically read `{output_directory}/index.md` and follow only relevant semantic concepts and their source links.",
         "",
@@ -285,7 +287,8 @@ def guidance(config_name: str, output_directory: str) -> str:
 
 
 def install(root: Path, requested: Path, output: str | None, no_guidance: bool) -> DiscoveryResult:
-    install_repo_skill(root)
+    install_repo_skill(root, REPO_SKILL)
+    install_repo_skill(root, CLAUDE_REPO_SKILL)
     config_file = config_path(root, requested)
     if not config_file.exists():
         config = template_config()
@@ -301,10 +304,14 @@ def install(root: Path, requested: Path, output: str | None, no_guidance: bool) 
         write_if_changed(local_script, Path(__file__).read_text(encoding="utf-8"))
     config = load_config(root, requested)
     if not no_guidance:
-        agents = root / "AGENTS.md"
-        existing = agents.read_text(encoding="utf-8") if agents.exists() else ""
         pattern = re.compile(rf"\n?{re.escape(GUIDANCE_START)}.*?{re.escape(GUIDANCE_END)}\n?", re.DOTALL)
-        write_if_changed(agents, (pattern.sub("", existing).rstrip() + "\n\n" + guidance(requested.as_posix(), config["output_directory"])).lstrip())
+        for filename, skill_path in (("AGENTS.md", REPO_SKILL), ("CLAUDE.md", CLAUDE_REPO_SKILL)):
+            guidance_file = root / filename
+            existing = guidance_file.read_text(encoding="utf-8") if guidance_file.exists() else ""
+            write_if_changed(
+                guidance_file,
+                (pattern.sub("", existing).rstrip() + "\n\n" + guidance(skill_path, requested.as_posix(), config["output_directory"])).lstrip(),
+            )
     return discover(root, requested)
 
 
@@ -313,9 +320,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--root", type=Path, default=Path.cwd())
     parser.add_argument("--config", type=Path, default=Path(DEFAULT_CONFIG_NAME))
     commands = parser.add_subparsers(dest="command", required=True)
-    init = commands.add_parser("init", help="install the repository skill, builder, config, and agent guidance")
+    init = commands.add_parser("init", help="install repository skills, builder, config, and agent guidance")
     init.add_argument("--output", help="override the generated bundle directory")
-    init.add_argument("--no-guidance", action="store_true", help="do not add the managed AGENTS.md block")
+    init.add_argument("--no-guidance", action="store_true", help="do not add managed agent-guidance blocks")
     commands.add_parser("discover", help="refresh the source inventory for semantic knowledge production")
     commands.add_parser("validate", help="check concept types and local references")
     commands.add_parser("status", help="show included source count and output location")
@@ -328,7 +335,7 @@ def main() -> int:
     try:
         if args.command == "init":
             result = install(root, args.config, args.output, args.no_guidance)
-            print(f"Installed repository skill and builder; discovered {result.sources} source(s); inventory {'updated' if result.inventory_updated else 'unchanged'}.")
+            print(f"Installed repository skills and builder; discovered {result.sources} source(s); inventory {'updated' if result.inventory_updated else 'unchanged'}.")
             return 0
         if args.command == "discover":
             result = discover(root, args.config)

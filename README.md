@@ -28,12 +28,12 @@ python3 /path/to/ai_skills/okf-builder/scripts/okf_index.py --root . init
 
 This creates:
 
-- `.agents/skills/okf-builder/` — a repo-local copy of the skill;
+- `.agents/skills/okf-builder/` and `.claude/skills/okf-builder/` — repo-local copies of the skill;
 - `.okf-index.json` — source inclusion and exclusion rules;
 - `.okf/discovery.json` — the incremental source inventory;
 - `.okf/index.md` — the root of the OKF knowledge bundle;
 - `tools/okf_index.py` — a standalone copy of the builder; and
-- a managed repository-knowledge section in `AGENTS.md`.
+- managed repository-knowledge sections in `AGENTS.md` and `CLAUDE.md`.
 
 Use a different knowledge-bundle location when needed:
 
@@ -55,6 +55,4 @@ python3 tools/okf_index.py validate
 
 ### Agent support
 
-The skill content follows the portable `SKILL.md` convention and includes Codex-specific UI metadata. Its current initializer installs the repository-local copy and guidance for Codex-style `AGENTS.md` workflows.
-
-Claude plugin packaging and a Claude-specific project installer are planned separately; this repository does not yet include a Claude plugin manifest or `CLAUDE.md` integration.
+The skill content follows the portable `SKILL.md` convention and includes Codex-specific UI metadata. Copy `okf-builder/` into the relevant global skill directory for Codex or Claude, then use `init` to set up a repository for both `AGENTS.md` and `CLAUDE.md` workflows. No plugin manifests are required.

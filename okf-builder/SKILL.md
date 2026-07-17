@@ -15,7 +15,7 @@ From the target repository root, run:
 python3 <skill-dir>/scripts/okf_index.py --root . init
 ```
 
-This installs a complete repo-local skill at `.agents/skills/okf-builder/`, then creates `.okf-index.json`, `.okf/discovery.json`, an empty OKF root index, a standalone `tools/okf_index.py`, and managed automatic-retrieval guidance in `AGENTS.md`. Codex discovers repo skills when launched within the repository. Use `--output knowledge` for a different bundle directory. Do not overwrite unrelated `AGENTS.md` instructions.
+This installs complete repo-local copies at `.agents/skills/okf-builder/` and `.claude/skills/okf-builder/`, then creates `.okf-index.json`, `.okf/discovery.json`, an empty OKF root index, a standalone `tools/okf_index.py`, and managed automatic-retrieval guidance in `AGENTS.md` and `CLAUDE.md`. Use `--output knowledge` for a different bundle directory. Do not overwrite unrelated agent instructions.
 
 Configure `source_include` and `exclude` in `.okf-index.json`. The default tracks text files outside excluded generated, dependency, and credential directories. These rules control inventory only; inspect the relevant source directly to establish knowledge.
 
