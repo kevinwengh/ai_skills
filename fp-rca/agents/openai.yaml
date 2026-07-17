@@ -1,0 +1,4 @@
+interface:
+  display_name: "FP RCA"
+  short_description: "Evidence-based first-principles RCA"
+  default_prompt: "Use $fp-rca to analyze this issue from evidence to root cause."

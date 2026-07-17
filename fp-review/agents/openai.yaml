@@ -1,0 +1,4 @@
+interface:
+  display_name: "FP Review"
+  short_description: "Challenge proposals from first principles"
+  default_prompt: "Use $fp-review to challenge this proposal and recommend a path."
