@@ -2,6 +2,20 @@
 
 Reusable AI-agent skills that are safe to share publicly.
 
+## Included skills
+
+| Skill | Purpose |
+| --- | --- |
+| `fp-rca` | Investigate incidents and failures from evidence to a causal explanation, using 5 Whys where it clarifies a supported causal link. |
+| `fp-review` | Challenge product, API, architecture, and implementation proposals from first principles; compare alternatives and recommend a path. |
+| `okf-builder` | Create and maintain source-linked Open Knowledge Format (OKF) repository knowledge. |
+
+## First-principles skills
+
+Use `fp-rca` for “Why did this unexpected outcome happen?” It separates observations, inferences, causes, contributors, and control gaps so an investigation does not confuse correlation with root cause.
+
+Use `fp-review` for “Should we make this change?” It establishes the underlying need and ground truths, tests assumptions, derives the smallest credible solution, compares options, and produces a proceed, revise, defer, or reject recommendation.
+
 ## OKF Builder
 
 `okf-builder` creates and maintains source-linked repository knowledge in the Open Knowledge Format (OKF). It combines LLM analysis with a small Python tool that inventories eligible source files, detects changes, and validates knowledge-bundle links.
